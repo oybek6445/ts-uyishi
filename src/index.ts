@@ -234,5 +234,100 @@ const ms = new MathService();
 ms.calculate();
 
 
+// 21. Property decorator — log qilish
+function LogProperty(target: any, propertyKey: string) {
+    let value = target[propertyKey];
 
+    const getter = function() {
+        return value;
+    };
+
+    const setter = function(newVal: any) {
+        console.log(`${propertyKey} set to ${newVal}`);
+        value = newVal;
+    };
+
+    Object.defineProperty(target, propertyKey, {
+        get: getter,
+        set: setter,
+        enumerable: true,
+        configurable: true
+    });
+}
+
+
+class User {
+    @LogProperty
+    name: string = "Ali";
+
+    @LogProperty
+    age: number = 25;
+}
+
+// 22. Method decorator — vaqtni o‘lchash
+function MeasureTime(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+    const originalMethod = descriptor.value;
+    descriptor.value = function(...args: any[]) {
+        const start = performance.now();
+        const result = originalMethod.apply(this, args);
+        const end = performance.now();
+        console.log(`Method ${propertyKey} took: ${(end - start).toFixed(2)}ms`);
+        return result;
+    };
+}
+
+class MathService2 {
+    @MeasureTime
+    heavyCalculation() {
+        for (let i = 0; i < 1_000_000; i++) {}
+    }
+}
+
+// 23. Class decorator — class nomini chiqarish
+function ShowClassName<T extends {new(...args:any[]):{}}>(constructor: T) {
+    return class extends constructor {
+        constructor(...args: any[]) {
+            super(...args);
+            console.log(`Class created: ${constructor.name}`);
+        }
+    }
+}
+
+@ShowClassName
+class Product {
+    name = "iPhone";
+}
+
+// 24. Method decorator — faqat admin ruxsati bilan
+function AdminOnly(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+    const originalMethod = descriptor.value;
+    descriptor.value = function(this: { user?: { role: string } }, ...args: any[]) {
+        if (this.user?.role !== "admin") {
+            console.log("Access Denied");
+            return;
+        }
+        return originalMethod.apply(this, args);
+    };
+}
+
+class Panel {
+    user = { role: "guest" };
+
+    @AdminOnly
+    deleteEverything() {
+        console.log("Everything deleted!");
+    }
+}
+
+// 25. Parameter decorator — log qilish
+function LogParam(target: any, propertyKey: string | symbol, parameterIndex: number) {
+    console.log(`Parameter at index ${parameterIndex} in method ${String(propertyKey)} has been decorated`);
+}
+
+
+class Greeter {
+    sayHello(@LogParam name: string) {
+        console.log(`Hello, ${name}`);
+    }
+}
 
